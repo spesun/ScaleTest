@@ -5,7 +5,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.VoidFunction;
 
-public class SparkTest {
+public class SparkJavaFileTest {
 
 	
 	public static void main(String[] args) throws InterruptedException {
