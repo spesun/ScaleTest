@@ -1,6 +1,7 @@
 package com.test.spark
 
 import org.apache.spark.{SparkConf, SparkContext}
+import org.json.Test
 
 object  SparkScalaTest {
 

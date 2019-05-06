@@ -37,7 +37,7 @@ public class SparkSqlTest {
 		sc.parallelize(userAccessLog);
 		JavaRDD<String> userAccessLogRDD = sc.parallelize(userAccessLog, 5);
 
-		// Ê×ÏÈ£¬½«ÆÕÍ¨µÄRDD£¬×ª»»ÎªÔªËØÎªRowµÄRDD
+		// é¦–å…ˆï¼Œå°†æ™®é€šçš„RDDï¼Œè½¬æ¢ä¸ºå…ƒç´ ä¸ºRowçš„RDD
 		JavaRDD<Row> userAccessLogRowRDD = userAccessLogRDD
 				.map(new Function<String, Row>() {
 
@@ -49,18 +49,18 @@ public class SparkSqlTest {
 
 				});
 
-		// ¹¹ÔìDataFrameµÄÔªÊı¾İ
+		// æ„é€ DataFrameçš„å…ƒæ•°æ®
 		List<StructField> structFields = new ArrayList<StructField>();
 		structFields.add(DataTypes.createStructField("name", DataTypes.StringType, true));
 		structFields.add(DataTypes.createStructField("length", DataTypes.LongType, true));
 
 		/**
-		 * 2¡¢¹¹½¨StructTypeÓÃÓÚDataFrame ÔªÊı¾İµÄÃèÊö
+		 * 2ã€æ„å»ºStructTypeç”¨äºDataFrame å…ƒæ•°æ®çš„æè¿°
 		 *
 		 */
 		StructType structType = DataTypes.createStructType(structFields);
 		/**
-		 * 3¡¢»ùÓÚMeataDataÒÔ¼°RDD<Row>À´¹¹ÔìDataFrame
+		 * 3ã€åŸºäºMeataDataä»¥åŠRDD<Row>æ¥æ„é€ DataFrame
 		 */
 		DataFrame logDF = sqlsc
 				.createDataFrame(userAccessLogRowRDD, structType);
@@ -75,10 +75,10 @@ public class SparkSqlTest {
 		logDF.registerTempTable("log");
 
 
-		//except all ²»Ö§³Ö,exceptÖ§³Ö
+		//except all ä¸æ”¯æŒ,exceptæ”¯æŒ
 		DataFrame dataResults = sqlsc.sql("select * from log where  name ='zhangsan' except select * from log where  name ='zhangsan'");
 
-		//intersectÖ§³Ö£¬intersect all²»Ö§³Ö
+		//intersectæ”¯æŒï¼Œintersect allä¸æ”¯æŒ
 		//DataFrame dataResults = sqlsc.sql("select * from log where  name ='zhangsan' intersect select * from log where  name ='zhangsan'");
 
 		//error
@@ -91,13 +91,13 @@ public class SparkSqlTest {
         DataFrame logDF = getLogDf();
 
 		/**
-		 * 4¡¢×¢²á³ÉÎªÁÙÊ±±íÒÔ¹©ºóĞøµÄSQL²éÑ¯²Ù×÷
+		 * 4ã€æ³¨å†Œæˆä¸ºä¸´æ—¶è¡¨ä»¥ä¾›åç»­çš„SQLæŸ¥è¯¢æ“ä½œ
 		 */
 		logDF.registerTempTable("log");
 
 		DataFrame dataResults = sqlsc.sql("select * from log where  name ='zhangsan'");
 		/**
-		 * 6¶Ô½á¹û½øĞĞ´¦Àí£¬°üÀ¨ÓÉDataFrame×ª»»ÎªRDD<Row> ÒÔ¼°½á¹ûµÄ³Ö¾Ã»¯
+		 * 6å¯¹ç»“æœè¿›è¡Œå¤„ç†ï¼ŒåŒ…æ‹¬ç”±DataFrameè½¬æ¢ä¸ºRDD<Row> ä»¥åŠç»“æœçš„æŒä¹…åŒ–
 		 */
 		List<Row> collect = dataResults.javaRDD().collect();
 		for (Row lists : collect) {
@@ -109,12 +109,12 @@ public class SparkSqlTest {
 
 		Properties prop = new Properties();
 
-		// Ê¹ÓÃSQLContext´´½¨jdbcµÄDataFrame
+		// ä½¿ç”¨SQLContextåˆ›å»ºjdbcçš„DataFrame
 		DataFrame dbDf = sqlsc.read().jdbc(url, "accounts", prop);
 
 		dbDf.registerTempTable("user");
 
-		    //rdd×¢²áµÄÁÙÊ±±íjoinÉÏ¹ØÏµ¿âµÄ±í
+		    //rddæ³¨å†Œçš„ä¸´æ—¶è¡¨joinä¸Šå…³ç³»åº“çš„è¡¨
 		DataFrame  joinResults= sqlsc.sql("select user.id, user.name, log.length  from user left join log   on user.name=log.name ");
 
 		collect = joinResults.javaRDD().collect();
