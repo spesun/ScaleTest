@@ -2,7 +2,8 @@ package com.test.spark;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 
 import java.util.Properties;
@@ -18,7 +19,7 @@ public class GuijiMysqlJava {
         prop.put("password", "Root123!");
 
         // 使用SQLContext创建jdbc的DataFrame
-        DataFrame dbDf = sqlsc.read().jdbc(url, "SYS_OP_LOG", prop);
+        Dataset<Row> dbDf = sqlsc.read().jdbc(url, "SYS_OP_LOG", prop);
         System.out.println(dbDf.collect());
 
         sc.close();

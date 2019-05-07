@@ -8,7 +8,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
@@ -23,7 +23,7 @@ public class SparkSqlTest {
 	static SQLContext sqlsc = new SQLContext(sc);
 
 
-	public static DataFrame getLogDf() {
+	public static Dataset<Row> getLogDf() {
 		List<String> userAccessLog = new ArrayList();
 		userAccessLog.add("zhangsan,123435");
 		userAccessLog.add("zhangsan,211123422");
@@ -62,7 +62,7 @@ public class SparkSqlTest {
 		/**
 		 * 3、基于MeataData以及RDD<Row>来构造DataFrame
 		 */
-		DataFrame logDF = sqlsc
+		Dataset<Row> logDF = sqlsc
 				.createDataFrame(userAccessLogRowRDD, structType);
 
 
@@ -70,13 +70,13 @@ public class SparkSqlTest {
 	}
 
     public static void testUnion() {
-		DataFrame logDF = getLogDf();
+        Dataset<Row> logDF = getLogDf();
 
 		logDF.registerTempTable("log");
 
 
 		//except all 不支持,except支持
-		DataFrame dataResults = sqlsc.sql("select * from log where  name ='zhangsan' except select * from log where  name ='zhangsan'");
+        Dataset<Row> dataResults = sqlsc.sql("select * from log where  name ='zhangsan' except select * from log where  name ='zhangsan'");
 
 		//intersect支持，intersect all不支持
 		//DataFrame dataResults = sqlsc.sql("select * from log where  name ='zhangsan' intersect select * from log where  name ='zhangsan'");
@@ -88,14 +88,14 @@ public class SparkSqlTest {
 
 	public static void testJoin() {
 
-        DataFrame logDF = getLogDf();
+        Dataset<Row> logDF = getLogDf();
 
 		/**
 		 * 4、注册成为临时表以供后续的SQL查询操作
 		 */
 		logDF.registerTempTable("log");
 
-		DataFrame dataResults = sqlsc.sql("select * from log where  name ='zhangsan'");
+        Dataset<Row> dataResults = sqlsc.sql("select * from log where  name ='zhangsan'");
 		/**
 		 * 6对结果进行处理，包括由DataFrame转换为RDD<Row> 以及结果的持久化
 		 */
@@ -110,12 +110,12 @@ public class SparkSqlTest {
 		Properties prop = new Properties();
 
 		// 使用SQLContext创建jdbc的DataFrame
-		DataFrame dbDf = sqlsc.read().jdbc(url, "accounts", prop);
+        Dataset<Row> dbDf = sqlsc.read().jdbc(url, "accounts", prop);
 
 		dbDf.registerTempTable("user");
 
 		    //rdd注册的临时表join上关系库的表
-		DataFrame  joinResults= sqlsc.sql("select user.id, user.name, log.length  from user left join log   on user.name=log.name ");
+        Dataset<Row> joinResults= sqlsc.sql("select user.id, user.name, log.length  from user left join log   on user.name=log.name ");
 
 		collect = joinResults.javaRDD().collect();
 		for (Row lists : collect) {
@@ -124,10 +124,10 @@ public class SparkSqlTest {
 
 
 		/** another example */
-		//  DataFrame df = sqlContext .read() .format("jdbc") .option("url", JDBCURL) .option("dbtable", "tsys_user").load();
+		//  Dataset<Row> df = sqlContext .read() .format("jdbc") .option("url", JDBCURL) .option("dbtable", "tsys_user").load();
 		// df.printSchema();
 		// Counts people by age
-		//DataFrame countsByAge = df.groupBy("customStyle").count();
+		//Dataset<Row> countsByAge = df.groupBy("customStyle").count();
 		//countsByAge.show();
 		//Saves countsByAge to S3 in the JSON format.
 		//countsByAge.write().format("json").save("hdfs://192.168.1.17:9000/administrator/sql-result" + sdf.format(new Date()));

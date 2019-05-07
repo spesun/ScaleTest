@@ -15,7 +15,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.hive.HiveContext;
 import org.json.JSONArray;
@@ -60,7 +60,7 @@ public class SparkHiveKafka {
         SparkContext sc = new SparkContext(sparkConf);
         JavaSparkContext javaSparkContext = new JavaSparkContext(sc);
         HiveContext hiveContext = new org.apache.spark.sql.hive.HiveContext(sc);
-        DataFrame dataFrame = hiveContext.sql("select * from test_kafka");
+        Dataset<Row> dataFrame = hiveContext.sql("select * from test_kafka");
 
         // 广播brokerlist
         final Broadcast<String> brokerListBroadcast = javaSparkContext.broadcast("DCP18:9092");
