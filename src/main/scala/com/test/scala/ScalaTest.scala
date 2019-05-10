@@ -1,28 +1,25 @@
 package com.test.scala
 
 import scala.collection.mutable.ArrayBuffer
-import org.junit.Test
 
 /**
   * Created by sun on 2016/11/17.
   */
-@Test
+//@Test
 class ScalaTest {
 
-  @Test
+//  @Test
   //TODO 不能使用单元测试
   def test(): Unit = {
 
   }
 }
 
-@Test
 object  ScalaTest {
 
   /**
     * 测试List。
     */
-  @Test
   def testList(): Unit = {
     var a = List(1, 2, 3, 4, 5, 6)
     println(1::a)
@@ -56,12 +53,16 @@ object  ScalaTest {
     })
     println(a2)
 
+    var seq2 = Seq((1,2))
+    var seq3 = Seq(1)
+    println(seq2.isInstanceOf[Product])
+    println(seq3.isInstanceOf[Product])
+
   }
 
   /**
     * 测试iterator
     */
-  @Test
   def SparkIterator(): Unit = {
     var a = Iterator(1, 2)
 
@@ -120,7 +121,6 @@ object  ScalaTest {
   /**
     * 测试map
    */
-  @Test
   def testMap(): Unit = {
     var map = Map(1 -> 2, 10 -> 20)
     //_代表map中的每一个元组.  _1为取元组中的第一个值
@@ -196,10 +196,10 @@ object  ScalaTest {
   }
 
   def main(args: Array[String]): Unit = {
-//    testList();
+    testList();
     //SparkIterator()
 //    testFunction1()
 //    testMap()
-    testReflection()
+//    testReflection()
   }
 }
