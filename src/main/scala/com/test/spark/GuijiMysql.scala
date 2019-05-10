@@ -106,8 +106,8 @@ object GuijiMysql {
     val spark = SparkSession .builder() .appName("Spark SQL basic example") .master("local") .getOrCreate()
     spark.sparkContext.setLogLevel("ERROR")
 
-    var tmp = getCeshi()
-//    var tmp = getOnline()
+//    var tmp = getCeshi()
+    var tmp = getOnline()
     var url = tmp._1
     var prop = tmp._2
 
@@ -125,8 +125,9 @@ object GuijiMysql {
 
     //销售
     var sellInfos = spark.read.jdbc(url, "AGENT_SELL_INFO", prop).selectExpr("AGENT_ID", productConvert, "BOT_SENTENCE_NUM", "MACHINE_NUM*VALID_TIME as MACHINE_NUM_DAY").
-                  where("DELETE_FLAG='N'").groupBy("AGENT_ID", "PRODUCT_VERSION").sum("MACHINE_NUM_DAY", "BOT_SENTENCE_NUM")
-//    sellInfos.show()
+                  where("DELETE_FLAG='N'"). groupBy("AGENT_ID", "PRODUCT_VERSION").//sum("MACHINE_NUM_DAY", "BOT_SENTENCE_NUM")
+                    agg(sum("MACHINE_NUM_DAY").as("MACHINE_NUM_DAY") , sum("BOT_SENTENCE_NUM").as("BOT_SENTENCE_NUM"))
+    sellInfos.show()
 
     //汇总
 /*    var sellList = sellInfos.collectAsList()
@@ -152,21 +153,20 @@ object GuijiMysql {
     //机器人
     var sell = df.selectExpr("AGENT_ID",  "MACHINE_NUM_DAY as num").where("PRODUCT_VERSION in ('01', '02')")
     var sellSum = sumInfos.selectExpr("AGENT_ID",  s"${sumField} as num").where("PRODUCT_VERSION='04'")
-//    var sellIntersectList1 = sell.intersect(sellSum).collectAsList()
-//    var sellExceptList1 = sell.except(sellSum).collectAsList()
-//    println("机器交集")
-//    println(sellIntersectList1)
-//    println("机器差集")
-//    println(sellExceptList1)
+    var sellIntersectList1 = sell.intersect(sellSum).collectAsList()
+    var sellExceptList1 = sell.except(sellSum).collectAsList()
+    println("机器交集")
+    println(sellIntersectList1)
+    println("机器差集")
+    println(sellExceptList1)
 
     //话术
     sell = df.selectExpr("AGENT_ID",  "BOT_SENTENCE_NUM as num").where("PRODUCT_VERSION in ('03')")
-    sell.show()
+//    sell.show()
     sellSum = sumInfos.selectExpr("AGENT_ID",  s"$sumField as num").where("PRODUCT_VERSION='03'")
-    sellSum.show()
+//    sellSum.show()
     var sellIntersectList2 = sell.intersect(sellSum).collectAsList()
     var sellExceptList2 = sell.except(sellSum).collectAsList()
-
 
     println("话术交集")
     println(sellIntersectList2)
