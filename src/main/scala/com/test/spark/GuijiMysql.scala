@@ -17,8 +17,8 @@ object GuijiMysql {
 
   case class DeviceIoTData (REQ_TIME:String, PARAMS:String, RESULT:String)
 
-  def main(args: Array[String]): Unit = {
-  setProp()
+  def test(): Unit = {
+    setProp()
 
     //    var sparkConf = new SparkConf().setMaster("local").setAppName("MultiDataSource");
     //    var sc = new SparkContext(sparkConf);
@@ -51,32 +51,45 @@ object GuijiMysql {
     var ds = dbDf.as[DeviceIoTData];
 
 
-    //TODO 大了会自动清空？
-    var list = ArrayBuffer[String]()
-    ds.take(10).foreach(line => {
-      var result = line.RESULT
-//      dealResult(result)
+    //注：这里面不能这样传递。。因为是在不同的线程中执行的,除非使用take
+    //    var list = ArrayBuffer[String]()
+    //    ds.take(Integer.MAX_VALUE).map(line => {
+    /*    var newDs = ds.map(line => {
+          line
+        })*/
 
+    var newDs = ds.map(line => {
+      var result = line.RESULT
+      //      dealResult(result)
+
+      var list = ArrayBuffer[String]()
       var params = line.PARAMS
       if (params != null && !params.isEmpty) {
         val jsonS = scala.util.parsing.json.JSON.parseFull(params)
         var d = jsonS.get.asInstanceOf[List[_]]
         d.foreach(t => {
           if (t  != null) {
-//            println(t.toString)
+            println(t.toString)
             list += t.toString
-            println(list)
           }
         })
+
       }
 
+      //注：这里不能使用return. 否则编译报错 TODO
+      list
     })
 
-    println(list)
     var path = "/tmp/spark/test.json"
     delFile(path)
-    spark.createDataset(list).toDF().write.json("file://" + path)
+
+    newDs.write.json("file://" + path)
+    //    spark.createDataset(list).toDF().write.json("file://" + path)
     spark.stop()
+  }
+
+  def main(args: Array[String]): Unit = {
+    test()
   }
 
   def delFile(path:String): Unit = {
