@@ -106,8 +106,8 @@ object GuijiMysql {
     val spark = SparkSession .builder() .appName("Spark SQL basic example") .master("local") .getOrCreate()
     spark.sparkContext.setLogLevel("ERROR")
 
-//    var tmp = getCeshi()
-    var tmp = getOnline()
+    var tmp = getCeshi()
+//    var tmp = getOnline()
     var url = tmp._1
     var prop = tmp._2
 
@@ -124,6 +124,9 @@ object GuijiMysql {
     buyInfos.show()
 
     //销售
+    //agg的使用例子
+//    val opr = "sum(SA)/(sum(SA/(PCT/100))) * 100"
+//    val df = DS1.groupBy("KEY").agg(expr(opr).as("re_pcnt"))
     var sellInfos = spark.read.jdbc(url, "AGENT_SELL_INFO", prop).selectExpr("AGENT_ID", productConvert, "BOT_SENTENCE_NUM", "MACHINE_NUM*VALID_TIME as MACHINE_NUM_DAY").
                   where("DELETE_FLAG='N'"). groupBy("AGENT_ID", "PRODUCT_VERSION").//sum("MACHINE_NUM_DAY", "BOT_SENTENCE_NUM")
                     agg(sum("MACHINE_NUM_DAY").as("MACHINE_NUM_DAY") , sum("BOT_SENTENCE_NUM").as("BOT_SENTENCE_NUM"))

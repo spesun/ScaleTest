@@ -1,7 +1,10 @@
 package com.test.spark
 
-import org.apache.spark.sql.types.{StringType, StructField, StructType}
-import org.apache.spark.sql.{Column, DataFrame, SparkSession}
+import java.util
+
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
+import org.apache.spark.sql.{Column, DataFrame, Row, SparkSession}
 import org.apache.spark.{SparkConf, SparkContext}
 
 object  SparkScalaTest {
@@ -105,7 +108,11 @@ object  SparkScalaTest {
 
     GuijiMysql.delFile(path)
 
-    //var list = new Seq(("1")) 不能这样使用。。会自动转换成Seq("1")，导致不能创建df
+    //可以这样写
+    var b = Seq(Tuple1("1"))
+    //var list = new Seq(("1")) 不能这样使用。。
+    // 会自动转换成Seq("1")，导致不能创建df.  因为 createDataFrame(Seq[A])中A需要是Prouct的子类
+    //可以这样使用，var a = List(Tuple1("1"))
     var list = Seq[testcase](testcase("1"))
     var df = spark.createDataFrame(list).selectExpr("concat_ws(',', id)").toDF()
     df.printSchema()
@@ -171,31 +178,4 @@ object  SparkScalaTest {
 
   }
 
-  def testThree(): Unit = {
-    val spark = SparkSession.builder().appName("Spark SQL basic example").master("local").getOrCreate()
-    import spark.implicits._
-    var seq = Seq("1")
-    var seq2 = Seq(("id", 1))
-    var seqcase = Seq(testcase("1"))
-
-    //创建Rdd
-    var rdd = spark.sparkContext.makeRDD(seq)  //java中无
-    rdd = spark.sparkContext.parallelize(seq)
-    rdd = spark.sparkContext.textFile(readFile)
-//    spark.sparkContext.hadoopRDD()
-
-//    创建DataFrame
-    var df = seq.toDF("id")
-    df = seq.toDF()
-//    df = spark.createDataFrame(seq).  //异常
-    df = spark.createDataFrame(seq2)
-
-    var field = StructField("id", StringType, nullable = true)
-    val schema = StructType(Seq(field))
-//    df = spark.createDataFrame(seq);
-
-
-//    case class 可以直接就转成DS
-
-  }
 }
