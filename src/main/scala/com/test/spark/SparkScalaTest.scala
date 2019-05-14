@@ -46,7 +46,6 @@ object  SparkScalaTest {
 //    testRdd
 //    testDataFrame
 //    testDfSaveAsText()
-    testThree()
   }
 
 

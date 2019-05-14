@@ -1,5 +1,9 @@
 package com.test.scala
 
+import com.alibaba.fastjson.JSON
+import com.alibaba.fastjson.serializer.{SerializeFilter, SerializerFeature}
+import com.test.spark.GuijiMysql
+
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -130,6 +134,51 @@ object  ScalaTest {
     //这里面不能使用_
     map.foreach(a => { println(a.toString()) })
 
+    //groupBy 测试
+    var newMap = map.groupBy(t => {
+     t._1
+    })
+    println(newMap)
+
+
+
+    var json = """    {"name":"sun", "age":5}  """
+    var json2 = """    {"name":"sun1", "age":5}  """
+    var record = Map(("id", "1"), ("PARAMS", json) )
+    var record2 = Map(("id", "1"),("PARAMS",json2))
+    var record3 = Map(("id", "1"), ("PARAMS",json) )
+    var seq = Seq(record, record2, record3)
+
+    var newSeq = seq.groupBy(t => {
+      var params = t.get("PARAMS").get.toString
+      val jsonS = JSON.parseObject(params)
+      //取前3位groupby，map中只有一个值
+      jsonS.get("name").toString.substring(0,3)
+    }).map(t => {
+
+      println("====" + t)
+      var v = t._2.reduce( (a,b) => {
+        println(a.getClass)
+        var p1 = JSON.parseObject(a.get("PARAMS").get.toString)
+        var p2 = JSON.parseObject(b.get("PARAMS").get.toString)
+        var sum = p1.getInteger("age") + p2.getInteger("age")
+
+        var newMap = scala.collection.mutable.Map[String, String]()
+        newMap("id") = a.get("id").get.toString
+
+        import scala.collection.JavaConverters._
+        var mapPara = scala.collection.mutable.Map[String, Any]()
+        mapPara.put("name", p1.get("name"))
+        mapPara.put("age", sum)
+        newMap.put("PARAMS", JSON.toJSONString(mapPara.asJava, SerializerFeature.PrettyFormat))
+        newMap.toMap
+      })
+      //返回v
+      Map((t._1,v))
+    })
+    println(newSeq)
+
+
 //    println(map.get(1))
   }
 
@@ -196,10 +245,11 @@ object  ScalaTest {
   }
 
   def main(args: Array[String]): Unit = {
-    testList();
+//    testList();
     //SparkIterator()
 //    testFunction1()
-//    testMap()
+    testMap()
 //    testReflection()
+
   }
 }

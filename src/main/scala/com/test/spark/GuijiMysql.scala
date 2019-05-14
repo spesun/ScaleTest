@@ -2,13 +2,13 @@ package com.test.spark
 
 import java.util.Properties
 
+import com.alibaba.fastjson.JSON
+import com.alibaba.fastjson.serializer.SerializerFeature
 import org.apache.commons.io.FileUtils
+import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-import scala.collection.immutable.HashMap
-import scala.collection.mutable.ArrayBuffer
 import scala.reflect.io.File
-import util.control.Breaks._
 
 object GuijiMysql {
 
@@ -16,9 +16,9 @@ object GuijiMysql {
     System.setProperty("hadoop.home.dir", "D:\\work\\hadoop\\hadoop-2.8.1")
   }
 
-  case class DeviceIoTData (REQ_TIME:String, PARAMS:String, RESULT:String)
+  case class DeviceIoTData (REQ_TIME:String, REQ_URL:String,MODEL:String, METHOD:String, STATUS:String, PARAMS:String, RESULT:String)
 
-  def test(): Unit = {
+  def testCheckLogScala(): Unit = {
     setProp()
 
     //    var sparkConf = new SparkConf().setMaster("local").setAppName("MultiDataSource");
@@ -26,10 +26,10 @@ object GuijiMysql {
     //    var sqlsc = new SQLContext(sc);
 
     val spark = SparkSession .builder() .appName("Spark SQL basic example") .master("local") .getOrCreate()
-    var url="jdbc:mysql://kf-master-db:3306/kf-workorder?useUnicode=true&characterEncoding=utf-8";
-    var prop = new Properties();
-    prop.put("user", "root")
-    prop.put("password", "Root123!")
+    var tmp = getCeshi()
+    //    var tmp = getOnline()
+    var url = tmp._1
+    var prop = tmp._2
 
     //例子
     /*    var df1 = session.read
@@ -45,6 +45,10 @@ object GuijiMysql {
     var dbDf = spark.read.jdbc(url, "SYS_OP_LOG", prop).where("STATUS='Y'")
     var ds = dbDf.as[DeviceIoTData];
 
+    var allRecordPath = "/tmp/spark/logRecord"
+    delFile(allRecordPath)
+    ds.drop("PARAMS", "RESULT").write.csv(allRecordPath)
+
 
     //注：这里面不能这样传递。。因为是在不同的线程中执行的,除非使用take
     //    var list = ArrayBuffer[String]()
@@ -53,7 +57,78 @@ object GuijiMysql {
           line
         })*/
 
-    var newDs = ds.map(line => {
+
+    import scala.collection.JavaConverters._
+//    import org.json4s.JsonDSL._
+//    import org.json4s._
+    import net.liftweb.json.JsonDSL._
+    import net.liftweb.json.JsonAST._
+    import net.liftweb.json.Extraction._
+    var newDs = ds.filter( t => {
+      (t.MODEL.equals("购买管理") /*|| t.MODEL.equals("销售管理")*/) && t.METHOD.equals("增加")
+    } )
+      .take(Integer.MAX_VALUE)
+      .groupBy(t => {
+        var params = t.PARAMS
+
+        if (params != null && !params.isEmpty) {
+          val jsonS = JSON.parseArray(params)
+//          println(jsonS)
+          try {
+            var obj = jsonS.getJSONObject(0 )
+            t.MODEL+ "-" + t.METHOD + "-" + obj.getString("agentId") + "-" + obj.get("productVersion")
+          } catch  {
+            case ex: Exception => println("===error===" + params)
+          }
+        }
+      }).map(t => {
+        var v = t._2.reduce( (a,b) => {
+          var p1 = JSON.parseArray(a.PARAMS).getJSONObject(0)
+          var p2 = JSON.parseArray(b.PARAMS).getJSONObject(0)
+          var newNum = p1.getDouble("machineDayNum") + p2.getDouble("machineDayNum")
+//          var newNum = p1.get("machineDayNum").get.asInstanceOf[Double] + p2.get("machineDayNum").get.asInstanceOf[Double]
+//          p2.put("machineDayNum", newNum)
+
+
+          var map =  Map(("machineDayNum",newNum))
+          var seq = List(map)
+//          var str = scala.util.parsing.json.JSONArray(seq).toString()
+          var str = prettyRender(seq)
+//          println(str)
+          var d = DeviceIoTData(null, null,null, null, null, str, null)
+          d
+        })
+
+      Map[String, DeviceIoTData]((t._1.toString, v))
+    })
+
+    println("==========")
+    println(newDs)
+
+
+/*      .foreach( t => {
+      var str = ""
+       t._2.foreach( r => {
+         var params = r.PARAMS
+         val jsonS = scala.util.parsing.json.JSON.parseFull(params)
+         var d = jsonS.get.asInstanceOf[List[_]]
+         d.foreach(t => {
+           if (t  != null) {
+             var map = t.asInstanceOf[Map[String, Any]]
+             map.foreach(t => {
+               str = str + String.valueOf(t._2) + ","
+             })
+           }
+         })
+         str = str + "\n"
+       })
+
+      var path = s"/tmp/spark/test${t._1}.csv"
+      delFile(path)
+      FileUtils.writeStringToFile(new java.io.File(path), str)
+    })*/
+
+/*    var newDs = ds.take(Integer.MAX_VALUE).flatMap(line => {
       var result = line.RESULT
       //      dealResult(result)
 
@@ -61,11 +136,18 @@ object GuijiMysql {
       var params = line.PARAMS
       if (params != null && !params.isEmpty) {
         val jsonS = scala.util.parsing.json.JSON.parseFull(params)
+        println(jsonS.get.getClass)
         var d = jsonS.get.asInstanceOf[List[_]]
+
+        var str = ""
         d.foreach(t => {
           if (t  != null) {
-            println(t.toString)
-            list += t.toString
+            var map = t.asInstanceOf[Map[String, Any]]
+            map.foreach(t => {
+              str = str + t._2.toString + ","
+            })
+//            println(t.toString)
+            list += str
           }
         })
 
@@ -73,14 +155,50 @@ object GuijiMysql {
 
       //注：这里不能使用return. 否则编译报错 TODO
       list
-    })
+    })*/
+
 
     var path = "/tmp/spark/test.json"
     delFile(path)
 
-    newDs.write.json("file://" + path)
+//    newDs.write.csv("file://" + path)
     //    spark.createDataset(list).toDF().write.json("file://" + path)
     spark.stop()
+  }
+
+  def testCheckLog(): Unit = {
+    setProp()
+    val spark = SparkSession .builder() .appName("Spark SQL basic example") .master("local") .getOrCreate()
+    var tmp = getCeshi()
+    //    var tmp = getOnline()
+    var url = tmp._1
+    var prop = tmp._2
+
+    import spark.implicits._
+    import org.apache.spark.sql.functions.schema_of_json
+    import org.apache.spark.sql.functions.from_json
+    // 使用SQLContext创建jdbc的DataFrame
+    var df = spark.read.jdbc(url, "SYS_OP_LOG", prop)
+//    val schema = df.select(schema_of_json($"PARAMS")).as[String].first
+    val schema = StructType(Seq(
+      StructField("agentId", StringType, true),
+      StructField("productVersion", StringType, true)
+    ))
+    df = df.withColumn("PARAMS", from_json($"PARAMS", schema)).where("STATUS='Y' and PARAMS is not null")
+    df = df.where($"PARAMS.agentId" === "D201904199453");
+    df.show(Integer.MAX_VALUE)
+//    df.select(schema_of_json($"PARAMS").as[String]).where("STATUS='Y' and PARAMS is not null")
+
+  }
+
+  def paramsToMap(params:String): Map[String, Any] = {
+    if (params != null && !params.isEmpty) {
+      val jsonS = scala.util.parsing.json.JSON.parseFull(params)
+      var d = jsonS.get.asInstanceOf[List[_]]
+      return d(0).asInstanceOf[Map[String, Any]]
+    }
+
+    null
   }
 
   def getCeshi(): (String, Properties)= {
@@ -100,7 +218,16 @@ object GuijiMysql {
   }
 
   def main(args: Array[String]): Unit = {
-//    test()
+    setProp()
+//    testCheckLogScala()
+//    testCheck()
+    testCheckLog()
+
+  }
+
+
+  def testCheck(): Unit = {
+    //    test()
     setProp()
 
     val spark = SparkSession .builder() .appName("Spark SQL basic example") .master("local") .getOrCreate()
