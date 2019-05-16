@@ -220,8 +220,8 @@ object GuijiMysql {
   def main(args: Array[String]): Unit = {
     setProp()
 //    testCheckLogScala()
-//    testCheck()
-    testCheckLog()
+    testCheck()
+//    testCheckLog()
 
   }
 
@@ -271,8 +271,11 @@ object GuijiMysql {
     FileUtils.writeStringToFile(new java.io.File("/tmp/spark/sum"), sumList.toString)*/
 
 
-    sellOrBuy(buyInfos, sumInfos, "TOTAL_MACHINE_DAY_NUM")
-//    sellOrBuy(sellInfos, sumInfos, "USE_MACHINE_DAY_NUM")
+    //购买和销售需要单独测试
+    //购买
+//    sellOrBuy(buyInfos, sumInfos, "TOTAL_MACHINE_DAY_NUM")
+    //销售
+    sellOrBuy(sellInfos, sumInfos, "USE_MACHINE_DAY_NUM")
 
     spark.stop()
   }
